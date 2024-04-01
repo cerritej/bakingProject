@@ -3,10 +3,48 @@
 #include <unistd.h>
 #include <pthread.h>
 #include <semaphore.h>
+#include <stdbool.h>
+#include <time.h>
+#include <string.h>
 
 #define TOT_RECIPES 5
 #define TOT_INGREDIENTS 9
+#define NUM_COLORS 7
 
+// ANSI color codes for terminal output
+const char* colors[NUM_COLORS] = {
+    "\033[0;31m", // Red
+    "\033[0;32m", // Green
+    "\033[0;33m", // Yellow
+    "\033[0;34m", // Blue
+    "\033[0;35m", // Magenta
+    "\033[0;36m", // Cyan
+    "\033[0;37m"  // White
+};
+
+// Enum for recipes
+typedef enum {
+    COOKIES,
+    PANCAKES,
+    HOMEMADE_PIZZA_DOUGH,
+    SOFT_PRETZELS,
+    CINNAMON_ROLLS
+} Recipe;
+
+// Enum for ingredients
+typedef enum {
+    FLOUR,
+    SUGAR,
+    YEAST,
+    BAKING_SODA,
+    SALT,
+    CINNAMON_ING,
+    EGG,
+    MILK,
+    BUTTER
+} Ingredient;
+
+// Kitchen structure
 typedef struct {
     sem_t pantry;
     sem_t refrigerator[2];
@@ -16,10 +54,12 @@ typedef struct {
     sem_t oven;
 } Kitchen;
 
+// Baker structure
 typedef struct {
     int id;
     Kitchen* kitchen;
-    int ramsied; // Flag to indicate if the baker is 'Ramsied'
+    bool ramsied; // Flag to indicate if the baker is 'Ramsied'
+    int color_index; // Index to choose color
 } Baker;
 
 Kitchen* kitchen;
@@ -43,36 +83,36 @@ void* baker_thread(void* arg) {
     };
 
     // Real-time output (for demonstration purposes)
-    printf("Baker_%d starting...\n", baker->id);
+    printf("%sBaker_%d starting...\033[0m\n", colors[baker->color_index], baker->id);
 
     // Randomly select one baker to be 'Ramsied'
     if (baker->id == ramsied_baker_id) {
         // Announce that the baker has been Ramsied
-        printf("Baker_%d has been Ramsied! They may drop all ingredients for a recipe at some point.\n", baker->id);
+        printf("%sBaker_%d has been Ramsied! They may drop all ingredients for a recipe at some point.\033[0m\n", colors[baker->color_index], baker->id);
 
         // Randomly select a recipe to be 'Ramsied'
         int ramsied_recipe_index = rand() % TOT_RECIPES;
 
         // Simulate baking each recipe
         for (int i = 0; i < TOT_RECIPES; i++) {
-            printf("Baker_%d starting %s...\n", baker->id, recipes[i]);
+            printf("%sBaker_%d starting %s...\033[0m\n", colors[baker->color_index], baker->id, recipes[i]);
 
             // Simulate acquiring ingredients
             for (int j = 0; ingredients[i][j] != NULL; j++) {
-                printf("Baker_%d acquiring %s...\n", baker->id, ingredients[i][j]);
+                printf("%sBaker_%d acquiring %s...\033[0m\n", colors[baker->color_index], baker->id, ingredients[i][j]);
                 usleep(rand() % 1000000); // Simulate acquiring time
             }
 
             // Simulate mixing
-            printf("Baker_%d mixing...\n", baker->id);
+            printf("%sBaker_%d mixing...\033[0m\n", colors[baker->color_index], baker->id);
             usleep(rand() % 1000000); // Simulate mixing time
 
             // Simulate baking
-            printf("Baker_%d baking...\n", baker->id);
+            printf("%sBaker_%d baking...\033[0m\n", colors[baker->color_index], baker->id);
             usleep(rand() % 1000000); // Simulate baking time
 
             // Announce completion of the recipe
-            printf("Baker_%d finished %s!\n", baker->id, recipes[i]);
+            printf("%sBaker_%d finished %s!\033[0m\n", colors[baker->color_index], baker->id, recipes[i]);
 
             // Check if the current recipe is the randomly selected Ramsied recipe
             if (i == ramsied_recipe_index) {
@@ -86,31 +126,31 @@ void* baker_thread(void* arg) {
                 sem_post(&baker->kitchen->oven);
 
                 // Announce that the baker has dropped all ingredients for the Ramsied recipe
-                printf("Baker_%d has dropped all their ingredients for recipe %s due to being Ramsied.\n", baker->id, recipes[i]);
+                printf("%sBaker_%d has dropped all their ingredients for recipe %s due to being Ramsied.\033[0m\n", colors[baker->color_index], baker->id, recipes[i]);
             }
         }
     }
     else {
         // Simulate baking each recipe for non-Ramsied bakers
         for (int i = 0; i < TOT_RECIPES; i++) {
-            printf("Baker_%d starting %s...\n", baker->id, recipes[i]);
+            printf("%sBaker_%d starting %s...\033[0m\n", colors[baker->color_index], baker->id, recipes[i]);
 
             // Simulate acquiring ingredients
             for (int j = 0; ingredients[i][j] != NULL; j++) {
-                printf("Baker_%d acquiring %s...\n", baker->id, ingredients[i][j]);
+                printf("%sBaker_%d acquiring %s...\033[0m\n", colors[baker->color_index], baker->id, ingredients[i][j]);
                 usleep(rand() % 1000000); // Simulate acquiring time
             }
 
             // Simulate mixing
-            printf("Baker_%d mixing...\n", baker->id);
+            printf("%sBaker_%d mixing...\033[0m\n", colors[baker->color_index], baker->id);
             usleep(rand() % 1000000); // Simulate mixing time
 
             // Simulate baking
-            printf("Baker_%d baking...\n", baker->id);
+            printf("%sBaker_%d baking...\033[0m\n", colors[baker->color_index], baker->id);
             usleep(rand() % 1000000); // Simulate baking time
 
             // Announce completion of the recipe
-            printf("Baker_%d finished %s!\n", baker->id, recipes[i]);
+            printf("%sBaker_%d finished %s!\033[0m\n", colors[baker->color_index], baker->id, recipes[i]);
         }
     }
 
@@ -149,6 +189,8 @@ int main() {
     for (int i = 0; i < num_bakers; i++) {
         baker_args[i].id = i + 1;
         baker_args[i].kitchen = kitchen;
+        baker_args[i].ramsied = (i + 1 == ramsied_baker_id) ? true : false;
+        baker_args[i].color_index = i % NUM_COLORS;
         pthread_create(&bakers[i], NULL, baker_thread, (void*)&baker_args[i]);
     }
 
