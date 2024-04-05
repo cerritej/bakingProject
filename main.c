@@ -1,3 +1,10 @@
+/*
+ Bake Off!
+ Jeremiah Cerriteno
+ Zar Mendoza
+ CIS452 03 W24
+ Dr. Denton Bobeldyk
+*/
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -106,7 +113,6 @@ void* baker_thread(void* arg) {
             // Check if the current recipe is the randomly selected Ramsied recipe
             if (i == ramsied_recipe_index && !restarted_sabotaged_recipe) {
                 // Release all semaphores held by the Ramsied baker
-                printf("ABOUT TO RELEASE\n");
                 sem_post(&baker->kitchen->pantry);
                 sem_post(&baker->kitchen->refrigerator[0]);
                 sem_post(&baker->kitchen->refrigerator[1]);
@@ -119,7 +125,7 @@ void* baker_thread(void* arg) {
                 printf("%sBaker_%d has dropped all their ingredients for recipe %s due to being Ramsied.\033[0m\n", colors[baker->color_index], baker->id, recipes[i]);
                 restarted_sabotaged_recipe = true;
                 if (i == ramsied_recipe_index && restarted_sabotaged_recipe) {
-                    printf("%sBaker_%d is RESTARTING recipe %s due to being Ramsied.\033[0m\n", colors[baker->color_index], baker->id, recipes[i]);
+                    printf("%sBaker_%d is RESTARTING the recipe %s due to being Ramsied.\033[0m\n", colors[baker->color_index], baker->id, recipes[i]);
                     printf("%sBaker_%d REstarting %s...\033[0m\n", colors[baker->color_index], baker->id, recipes[i]);
 
                     for (int j = 0; ingredients[i][j] != NULL; j++) {
