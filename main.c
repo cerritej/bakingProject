@@ -92,7 +92,7 @@ void* baker_thread(void* arg) {
 
         // Randomly select a recipe to be 'Ramsied'
         int ramsied_recipe_index = rand() % TOT_RECIPES;
-
+        bool restarted_sabotaged_recipe = false;
         // Simulate baking each recipe
         for (int i = 0; i < TOT_RECIPES; i++) {
             printf("%sBaker_%d starting %s...\033[0m\n", colors[baker->color_index], baker->id, recipes[i]);
@@ -103,6 +103,31 @@ void* baker_thread(void* arg) {
                 usleep(rand() % 1000000); // Simulate acquiring time
             }
 
+            // Check if the current recipe is the randomly selected Ramsied recipe
+            if (i == ramsied_recipe_index && !restarted_sabotaged_recipe) {
+                // Release all semaphores held by the Ramsied baker
+                printf("ABOUT TO RELEASE\n");
+                sem_post(&baker->kitchen->pantry);
+                sem_post(&baker->kitchen->refrigerator[0]);
+                sem_post(&baker->kitchen->refrigerator[1]);
+                sem_post(&baker->kitchen->mixer);
+                sem_post(&baker->kitchen->bowl);
+                sem_post(&baker->kitchen->spoon);
+                sem_post(&baker->kitchen->oven);
+                
+                // Announce that the baker has dropped all ingredients for the Ramsied recipe
+                printf("%sBaker_%d has dropped all their ingredients for recipe %s due to being Ramsied.\033[0m\n", colors[baker->color_index], baker->id, recipes[i]);
+                restarted_sabotaged_recipe = true;
+                if (i == ramsied_recipe_index && restarted_sabotaged_recipe) {
+                    printf("%sBaker_%d is RESTARTING recipe %s due to being Ramsied.\033[0m\n", colors[baker->color_index], baker->id, recipes[i]);
+                    printf("%sBaker_%d REstarting %s...\033[0m\n", colors[baker->color_index], baker->id, recipes[i]);
+
+                    for (int j = 0; ingredients[i][j] != NULL; j++) {
+                        printf("%sBaker_%d REacquiring %s...\033[0m\n", colors[baker->color_index], baker->id, ingredients[i][j]);
+                        usleep(rand() % 1000000); // Simulate acquiring time
+                    }
+                }
+            }
             // Simulate mixing
             printf("%sBaker_%d mixing...\033[0m\n", colors[baker->color_index], baker->id);
             usleep(rand() % 1000000); // Simulate mixing time
@@ -113,21 +138,6 @@ void* baker_thread(void* arg) {
 
             // Announce completion of the recipe
             printf("%sBaker_%d finished %s!\033[0m\n", colors[baker->color_index], baker->id, recipes[i]);
-
-            // Check if the current recipe is the randomly selected Ramsied recipe
-            if (i == ramsied_recipe_index) {
-                // Release all semaphores held by the Ramsied baker
-                sem_post(&baker->kitchen->pantry);
-                sem_post(&baker->kitchen->refrigerator[0]);
-                sem_post(&baker->kitchen->refrigerator[1]);
-                sem_post(&baker->kitchen->mixer);
-                sem_post(&baker->kitchen->bowl);
-                sem_post(&baker->kitchen->spoon);
-                sem_post(&baker->kitchen->oven);
-
-                // Announce that the baker has dropped all ingredients for the Ramsied recipe
-                printf("%sBaker_%d has dropped all their ingredients for recipe %s due to being Ramsied.\033[0m\n", colors[baker->color_index], baker->id, recipes[i]);
-            }
         }
     }
     else {
